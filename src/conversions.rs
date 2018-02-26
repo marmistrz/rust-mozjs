@@ -38,8 +38,8 @@ use jsapi::{JSContext, JSObject, JSString, MutableHandleValue, RootedObject};
 use jsval::{BooleanValue, Int32Value, NullValue, UInt32Value, UndefinedValue};
 use jsval::{JSVal, ObjectValue, ObjectOrNullValue, StringValue};
 use rust::{ToBoolean, ToInt32, ToInt64, ToNumber, ToUint16, ToUint32, ToUint64};
-use rust::{ToString, maybe_wrap_object_or_null_value};
 use rust::HandleValue;
+use rust::{ToString, maybe_wrap_object_or_null_value, maybe_wrap_object_value};
 use rust::maybe_wrap_value;
 use libc;
 use num_traits::{Bounded, Zero};
@@ -662,10 +662,38 @@ impl ToJSValConvertible for *mut JSObject {
 }
 
 // https://heycam.github.io/webidl/#es-object
+impl ToJSValConvertible for ptr::NonNull<JSObject> {
+    #[inline]
+    unsafe fn to_jsval(&self, cx: *mut JSContext, rval: MutableHandleValue) {
+        rval.set(ObjectValue(self.as_ptr()));
+        maybe_wrap_object_value(cx, rval);
+    }
+}
+
+// https://heycam.github.io/webidl/#es-object
 impl ToJSValConvertible for Heap<*mut JSObject> {
     #[inline]
     unsafe fn to_jsval(&self, cx: *mut JSContext, rval: MutableHandleValue) {
         rval.set(ObjectOrNullValue(self.get()));
         maybe_wrap_object_or_null_value(cx, rval);
+    }
+}
+
+// https://heycam.github.io/webidl/#es-object
+impl FromJSValConvertible for *mut JSObject {
+    type Config = ();
+    #[inline]
+    unsafe fn from_jsval(cx: *mut JSContext,
+                         value: HandleValue,
+                         _option: ())
+                         -> Result<ConversionResult<*mut JSObject>, ()> {
+        if !value.is_object() {
+            throw_type_error(cx, "value is not an object");
+            return Err(());
+        }
+
+        AssertSameCompartment(cx, value.to_object());
+
+        Ok(ConversionResult::Success(value.to_object()))
     }
 }
