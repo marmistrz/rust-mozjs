@@ -427,8 +427,8 @@ impl<'a, T: 'a + RootKind + GCMethods> RootedGuard<'a, T> {
     }
 
     // REVIEW: is this equivalent to?
-    // pub fn handle(&self) -> Handle<T>
-    pub fn handle(&'a self) -> Handle<'a, T> {
+    // pub fn handle(&'a self) -> Handle<'a, T>
+    pub fn handle(&self) -> Handle<T> {
         Handle::new(&self.root.ptr)
     }
 

@@ -680,11 +680,11 @@ impl ToJSValConvertible for Heap<*mut JSObject> {
 }
 
 // https://heycam.github.io/webidl/#es-object
-impl FromJSValConvertible for *mut JSObject {
+impl<'a> FromJSValConvertible<'a> for *mut JSObject {
     type Config = ();
     #[inline]
     unsafe fn from_jsval(cx: *mut JSContext,
-                         value: HandleValue,
+                         value: HandleValue<'a>,
                          _option: ())
                          -> Result<ConversionResult<*mut JSObject>, ()> {
         if !value.is_object() {
